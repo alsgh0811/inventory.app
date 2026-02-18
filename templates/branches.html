@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3>사업소 관리</h3>
+
+<form method="POST" style="margin-bottom:20px;">
+    <input type="text" name="branch_name" placeholder="사업소 이름" required>
+    <button type="submit">사업소 추가</button>
+</form>
+
+<table border="1" cellpadding="5">
+    <tr>
+        <th>ID</th>
+        <th>사업소명</th>
+        <th>삭제</th>
+    </tr>
+
+    {% for branch in branches %}
+    <tr>
+        <td>{{ branch.id }}</td>
+        <td>{{ branch.name }}</td>
+        <td>
+            <a href="/delete_branch/{{ branch.id }}"
+               class="btn btn-sm btn-danger"
+               onclick="return confirm('정말 삭제하시겠습니까?');">
+               삭제
+            </a>
+        </td>
+
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

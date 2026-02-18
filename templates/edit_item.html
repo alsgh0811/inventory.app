@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>자재 수정</title>
+</head>
+<body>
+    <h2>자재 수정</h2>
+
+    <form method="POST">
+        이름: <input name="name" value="{{ item.name }}" required><br>
+        규격: <input name="spec" value="{{ item.spec }}" required><br>
+        위치: <input name="location" value="{{ item.location }}" required><br>
+
+        <button type="submit">수정 완료</button>
+    </form>
+
+    <a href="/">뒤로가기</a>
+</body>
+</html>

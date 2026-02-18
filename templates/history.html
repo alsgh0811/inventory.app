@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card p-3 shadow-sm">
+    <h5>입출고 기록</h5>
+
+    <a href="/download_excel" class="btn btn-success mb-3">엑셀 다운로드</a>
+
+    <table class="table table-bordered table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>자재명</th>
+                <th>구분</th>
+                <th>수량</th>
+                <th>시간</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for r in records %}
+            <tr>
+                <td>{{ r.item.name }}</td>
+                <td>
+                    {% if r.change_type == "IN" %}
+                        <span class="badge bg-success">입고</span>
+                    {% else %}
+                        <span class="badge bg-danger">출고</span>
+                    {% endif %}
+                </td>
+                <td>{{ r.quantity }}</td>
+                <td>{{ r.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

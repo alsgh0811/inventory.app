@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card mb-4 p-3 shadow-sm">
+    <form method="GET" action="/" class="row g-2">
+        <div class="col-md-10">
+            <input type="text" name="search" class="form-control" placeholder="자재명, 규격, 위치 검색">
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100">검색</button>
+        </div>
+    </form>
+</div>
+
+<div class="card mb-3 p-3 shadow-sm">
+    <h6>📦 위치별 보기</h6>
+
+    <a href="/" class="btn btn-outline-dark btn-sm me-1 mb-1">전체</a>
+
+    {% for loc in locations %}
+        <a href="/?location={{ loc }}"
+           class="btn btn-sm mb-1
+           {% if selected_location == loc %}
+                btn-primary
+           {% else %}
+                btn-outline-primary
+           {% endif %}">
+           {{ loc }}
+        </a>
+    {% endfor %}
+</div>
+
+<div class="row">
+
+    <!-- 자재 등록 -->
+    <div class="col-md-6">
+        <div class="card p-3 shadow-sm mb-4">
+            <h5>자재 등록</h5>
+            <form method="POST" action="/add_item">
+                <input class="form-control mb-2" type="text" name="name" placeholder="이름">
+                <input class="form-control mb-2" type="text" name="spec" placeholder="규격">
+                <input class="form-control mb-2" type="number" name="quantity" placeholder="수량">
+                <input class="form-control mb-2" type="text" name="location" placeholder="위치">
+                <button class="btn btn-success w-100">등록</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CSV 업로드 -->
+    <div class="col-md-6">
+        <div class="card p-3 shadow-sm mb-4">
+            <h5>CSV 일괄 등록</h5>
+            <form method="POST" action="/upload_csv" enctype="multipart/form-data">
+                <input class="form-control mb-2" type="file" name="file">
+                <button class="btn btn-secondary w-100">업로드</button>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<div class="card p-3 shadow-sm">
+    <h5>자재 목록</h5>
+    <table class="table table-striped table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>이름</th>
+                <th>규격</th>
+                <th>수량</th>
+                <th>위치</th>
+                <th>입출고</th>
+                <th>관리</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for item in items %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.spec }}</td>
+                <td>
+                    {% if item.quantity == 0 %}
+                        <span class="badge bg-danger">0</span>
+                    {% else %}
+                        {{ item.quantity }}
+                    {% endif %}
+                </td>
+
+                <td>{{ item.location }}</td>
+                <td>
+                    <form method="POST" action="/update_stock/{{ item.id }}" class="d-flex">
+                        <select name="type" class="form-select me-2">
+                            <option value="IN">입고</option>
+                            <option value="OUT">출고</option>
+                        </select>
+                        <input type="number" name="quantity" class="form-control me-2" style="width:90px;">
+                        <button class="btn btn-primary btn-sm">적용</button>
+                    </form>
+                </td>
+             
+                <td>
+                    <a href="/edit_item/{{ item.id }}" class="btn btn-warning btn-sm">수정</a>
+                    <a href="/delete_item/{{ item.id }}"
+                       class="btn btn-danger btn-sm"
+                       onclick="return confirm('정말 삭제하시겠습니까?');">
+                       삭제
+                    </a>
+                </td>
+
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

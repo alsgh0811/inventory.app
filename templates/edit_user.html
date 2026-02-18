@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3>사용자 수정</h3>
+
+<form method="POST">
+
+    <label>사업소</label>
+    <select name="branch_id" class="form-control">
+        {% for branch in branches %}
+            <option value="{{ branch.id }}"
+                {% if user.branch_id == branch.id %} selected {% endif %}>
+                {{ branch.name }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <br>
+
+    <label>
+        <input type="checkbox" name="is_active"
+        {% if user.is_active %} checked {% endif %}>
+        승인
+    </label>
+
+    <br>
+
+    <label>
+        <input type="checkbox" name="is_superadmin"
+        {% if user.is_superadmin %} checked {% endif %}>
+        슈퍼관리자
+    </label>
+
+    <br><br>
+
+    <button type="submit" class="btn btn-success">저장</button>
+</form>
+
+{% endblock %}
