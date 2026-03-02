@@ -1027,5 +1027,31 @@ def inject_user():
 with app.app_context():
     db.create_all()
 
+# ==============================
+# 🔥 운영용 자동 DB 세팅 코드
+# ==============================
+
+from werkzeug.security import generate_password_hash
+
+with app.app_context():
+    # 1️⃣ 테이블 자동 생성
+    db.create_all()
+
+    # 2️⃣ 관리자 계정 자동 생성 (없을 때만)
+    try:
+        admin = User.query.filter_by(username="admin").first()
+        if not admin:
+            admin = User(
+                username="admin",
+                password=generate_password_hash("1234"),
+                is_admin=True
+            )
+            db.session.add(admin)
+            db.session.commit()
+            print("✅ 관리자 계정 자동 생성 완료")
+    except Exception as e:
+        print("관리자 생성 중 오류:", e)
+
+
 if __name__ == "__main__":
     app.run()
