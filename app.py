@@ -414,26 +414,21 @@ def upload_csv():
     if not file or file.filename == "":
         return "파일이 없습니다."
 
-    stream = file.stream.read().decode("utf-8").splitlines()
+    # 🔥 utf-8-sig 로 BOM 제거
+    stream = file.stream.read().decode("utf-8-sig").splitlines()
     csv_reader = csv.DictReader(stream)
+
+    user = User.query.get(session["user_id"])
 
     for row in csv_reader:
         try:
-            name = row["이름"].strip()
-            spec = row["규격"].strip()
-            quantity = int(row["수량"])
-            location = row["위치"].strip()
+            name = row["name"].strip()
+            spec = row["spec"].strip()
+            quantity = int(row["quantity"])
+            location = row["location"].strip()
 
-            # ✅ 필수값 체크
             if not name or not spec or not location:
                 continue
-
-            # ✅ 위치 없으면 등록 안되게
-            if location == "":
-                continue
-
-            # 🔥 사업소 분리 대비 (현재 로그인 유저 기준)
-            user = User.query.get(session["user_id"])
 
             existing_item = Item.query.filter_by(
                 name=name,
@@ -449,7 +444,7 @@ def upload_csv():
                     spec=spec,
                     quantity=quantity,
                     location=location,
-                    branch_id=user.branch_id  # ⭐ 이거 반드시 필요
+                    branch_id=user.branch_id
                 )
                 db.session.add(new_item)
 
@@ -1029,7 +1024,8 @@ def inject_user():
     return dict(current_user=None)
 
 
+with app.app_context():
+    db.create_all()
+
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
     app.run()
