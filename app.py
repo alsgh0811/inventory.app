@@ -911,6 +911,38 @@ def download_excel():
 
     return send_file(file_path, as_attachment=True)
 
+@app.route("/download_inventory")
+def download_inventory():
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user = User.query.get(session["user_id"])
+
+    # 현재 사용자의 사업소 재고만 가져오기
+    items = Item.query.filter_by(branch_id=user.branch_id).all()
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "현재재고"
+
+    # 헤더
+    ws.append(["이름", "규격", "수량", "위치"])
+
+    # 데이터 입력
+    for item in items:
+        ws.append([
+            item.name,
+            item.spec,
+            item.quantity,
+            item.location
+        ])
+
+    filename = "inventory.xlsx"
+    wb.save(filename)
+
+    return send_file(filename, as_attachment=True)
+
+
 @app.route("/upload_csv", methods=["POST"])
 def upload_csv():
     if "user_id" not in session:
