@@ -945,59 +945,41 @@ def download_inventory():
 
 @app.route("/upload_csv", methods=["POST"])
 def upload_csv():
-    if "user_id" not in session:
-        return redirect("/login")
+
+    if "file" not in request.files:
+        return "파일이 없습니다."
 
     file = request.files["file"]
 
-    if not file or file.filename == "":
-        return "파일이 없습니다."
+    if file.filename == "":
+        return "파일이 선택되지 않았습니다."
 
-    stream = file.stream.read().decode("utf-8").splitlines()
-    csv_reader = csv.DictReader(stream)
+    try:
+        stream = io.StringIO(file.stream.read().decode("utf-8"))
+        csv_reader = csv.DictReader(stream)
 
-    for row in csv_reader:
-        try:
-            name = row["이름"].strip()
-            spec = row["규격"].strip()
-            quantity = int(row["수량"])
-            location = row["위치"].strip()
+        for row in csv_reader:
 
-            # ✅ 필수값 체크
-            if not name or not spec or not location:
-                continue
+            name = row["이름"]
+            spec = row["규격"]
+            qty = int(row["수량"])
+            location = row["위치"]
 
-            # ✅ 위치 없으면 등록 안되게
-            if location == "":
-                continue
-
-            # 🔥 사업소 분리 대비 (현재 로그인 유저 기준)
-            user = User.query.get(session["user_id"])
-
-            existing_item = Item.query.filter_by(
+            item = Item(
                 name=name,
                 spec=spec,
-                branch_id=user.branch_id
-            ).first()
+                quantity=qty,
+                location=location
+            )
 
-            if existing_item:
-                existing_item.quantity += quantity
-            else:
-                new_item = Item(
-                    name=name,
-                    spec=spec,
-                    quantity=quantity,
-                    location=location,
-                    branch_id=user.branch_id  # ⭐ 이거 반드시 필요
-                )
-                db.session.add(new_item)
+            db.session.add(item)
 
-        except Exception as e:
-            print("CSV 오류:", e)
-            continue
+        db.session.commit()
 
-    db.session.commit()
-    return redirect("/")
+        return redirect("/")
+
+    except Exception as e:
+        return f"CSV 업로드 오류: {str(e)}"
 
 @app.route("/branches", methods=["GET", "POST"])
 def manage_branches():
