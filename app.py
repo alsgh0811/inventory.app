@@ -420,11 +420,11 @@ def upload_csv():
         for row in reader:
             print(row)
 
-            name = row.get("name", "").strip()
-            spec = row.get("spec", "").strip()
-            location = row.get("location", "").strip()
+            name = (row.get("name") or row.get("이름") or "").strip()
+            spec = (row.get("spec") or row.get("규격") or "").strip()
+            location = (row.get("location") or row.get("위치") or "").strip()
 
-            qty_str = row.get("quantity", "").strip()
+            qty_str = (row.get("quantity") or row.get("수량") or "").strip()
 
             # 필수값 체크
             if not name or not spec:
@@ -450,7 +450,7 @@ def upload_csv():
             quantity=quantity,
             location=location  # 📍 위치 저장
             )
-            db.session.add(item)
+            
             db.session.commit()
 
             # 초기 이력 기록
@@ -461,9 +461,10 @@ def upload_csv():
                    quantity=quantity,
                    manager="CSV등록"
                )
-               db.session.add(history)
-               db.session.commit()
+               
+               db.session.add(item)
 
+        db.session.commit()
 
         return redirect("/")
 
