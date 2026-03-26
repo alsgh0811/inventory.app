@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import openpyxl
 import os
 import csv
+from io import TextIOWrapper
 import io
 
 app = Flask(__name__)
@@ -405,56 +406,68 @@ def download_excel():
 
     return send_file(file_path, as_attachment=True)
 
-@app.route("/upload_csv", methods=["POST"])
+@app.route("/upload_csv", methods=["GET", "POST"])
 def upload_csv():
-    if "user_id" not in session:
-        return redirect("/login")
+    if request.method == "POST":
+        file = request.files["file"]
 
-    file = request.files["file"]
+        if not file:
+            return redirect("/upload_csv")
 
-    if not file or file.filename == "":
-        return "파일이 없습니다."
+        stream = TextIOWrapper(file.stream, encoding="utf-8-sig")
+        reader = csv.DictReader(stream)
 
-    # 🔥 utf-8-sig 로 BOM 제거
-    stream = file.stream.read().decode("utf-8-sig").splitlines()
-    csv_reader = csv.DictReader(stream)
+        for row in reader:
+            print(row)
 
-    user = User.query.get(session["user_id"])
+            name = row.get("name", "").strip()
+            spec = row.get("spec", "").strip()
+            location = row.get("location", "").strip()
 
-    for row in csv_reader:
-        try:
-            name = row["name"].strip()
-            spec = row["spec"].strip()
-            quantity = int(row["quantity"])
-            location = row["location"].strip()
+            qty_str = row.get("quantity", "").strip()
 
-            if not name or not spec or not location:
+            # 필수값 체크
+            if not name or not spec:
                 continue
 
-            existing_item = Item.query.filter_by(
-                name=name,
-                spec=spec,
-                branch_id=user.branch_id
-            ).first()
-
-            if existing_item:
-                existing_item.quantity += quantity
+            # 수량 안전 처리
+            if qty_str == "":
+               quantity = 0
             else:
-                new_item = Item(
-                    name=name,
-                    spec=spec,
-                    quantity=quantity,
-                    location=location,
-                    branch_id=user.branch_id
-                )
-                db.session.add(new_item)
+                try:
+                   quantity = int(qty_str)
+                except ValueError:
+                   continue
 
-        except Exception as e:
-            print("CSV 오류:", e)
-            continue
+            # 중복 자재 방지
+            existing = Item.query.filter_by(name=name, spec=spec).first()
+            if existing:
+                continue
+ 
+            item = Item(
+            name=name,
+            spec=spec,
+            quantity=quantity,
+            location=location  # 📍 위치 저장
+            )
+            db.session.add(item)
+            db.session.commit()
 
-    db.session.commit()
-    return redirect("/")
+            # 초기 이력 기록
+            if quantity > 0:
+               history = History(
+                   item_id=item.id,
+                   change_type="IN",
+                   quantity=quantity,
+                   manager="CSV등록"
+               )
+               db.session.add(history)
+               db.session.commit()
+
+
+        return redirect("/")
+
+    return render_template("upload_csv.html")
 
 @app.route("/branches", methods=["GET", "POST"])
 def manage_branches():
