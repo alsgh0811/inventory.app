@@ -418,51 +418,34 @@ def upload_csv():
         reader = csv.DictReader(stream)
 
         for row in reader:
-            print(row)
-
             name = (row.get("name") or row.get("이름") or "").strip()
             spec = (row.get("spec") or row.get("규격") or "").strip()
             location = (row.get("location") or row.get("위치") or "").strip()
-
             qty_str = (row.get("quantity") or row.get("수량") or "").strip()
 
-            # 필수값 체크
             if not name or not spec:
                 continue
 
-            # 수량 안전 처리
-            if qty_str == "":
-               quantity = 0
-            else:
-                try:
-                   quantity = int(qty_str)
-                except ValueError:
-                   continue
+            try:
+                quantity = int(qty_str) if qty_str else 0
+            except ValueError:
+                continue
 
-            # 중복 자재 방지
             existing = Item.query.filter_by(name=name, spec=spec).first()
             if existing:
                 continue
- 
-            item = Item(
-            name=name,
-            spec=spec,
-            quantity=quantity,
-            location=location  # 📍 위치 저장
-            )
-            
-            db.session.commit()
 
-            # 초기 이력 기록
+            item = Item(name=name, spec=spec, quantity=quantity, location=location)
+            db.session.add(item)
+
             if quantity > 0:
-               history = History(
-                   item_id=item.id,
-                   change_type="IN",
-                   quantity=quantity,
-                   manager="CSV등록"
-               )
-               
-               db.session.add(item)
+                history = History(
+                    item=item,  # item_id 대신 관계 매핑 가능
+                    change_type="IN",
+                    quantity=quantity,
+                    manager="CSV등록"
+                )
+                db.session.add(history)
 
         db.session.commit()
 
